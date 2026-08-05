@@ -1,0 +1,28 @@
+# Node dependencies
+frontend/node_modules/
+frontend/npm-debug.log*
+
+# Production build outputs
+frontend/dist/
+
+# Python bytecode & cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+
+# Environment files
+.env
+.venv/
+env/
+venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+
+# OS generated files
+.DS_Store
+Thumbs.db
