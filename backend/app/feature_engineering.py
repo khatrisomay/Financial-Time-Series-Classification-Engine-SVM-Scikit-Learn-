@@ -24,6 +24,15 @@ def prepare_features_and_target(df, selected_features=None):
     df_feat['SMA_50'] = df_feat['Close'].rolling(window=50).mean()
     df_feat['SMA_Diff'] = df_feat['SMA_10'] - df_feat['SMA_50']
     
+    # Advanced Indicators: MACD & Bollinger Bands
+    ema_12 = df_feat['Close'].ewm(span=12, adjust=False).mean()
+    ema_26 = df_feat['Close'].ewm(span=26, adjust=False).mean()
+    df_feat['MACD'] = ema_12 - ema_26
+    
+    sma_20 = df_feat['Close'].rolling(window=20).mean()
+    std_20 = df_feat['Close'].rolling(window=20).std()
+    df_feat['Bollinger_Bands'] = (df_feat['Close'] - sma_20) / (std_20 * 2 + 1e-9)
+    
     returns = df_feat['Close'].pct_change()
     df_feat['Volatility'] = returns.rolling(window=10).std()
     
@@ -36,7 +45,6 @@ def prepare_features_and_target(df, selected_features=None):
     if selected_features is None or len(selected_features) == 0:
         selected_features = ['Open-Close', 'High-Low']
         
-    # Ensure requested features exist
     available_features = [f for f in selected_features if f in df_clean.columns]
     if not available_features:
         available_features = ['Open-Close', 'High-Low']
