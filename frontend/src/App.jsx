@@ -18,6 +18,8 @@ export default function App() {
 
   const [predictionData, setPredictionData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [isOptimizing, setIsOptimizing] = useState(false);
+  const [optNotice, setOptNotice] = useState(null);
   const [errorMsg, setErrorMsg] = useState(null);
 
   useEffect(() => {
@@ -54,6 +56,37 @@ export default function App() {
       generateFallbackData();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleAutoOptimize = async () => {
+    setIsOptimizing(true);
+    setOptNotice(null);
+    try {
+      const res = await fetch('http://localhost:8000/api/optimize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: symbol,
+          selected_features: selectedFeatures,
+          kernel: kernel
+        })
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const opt = data.optimization;
+        setPenaltyC(opt.best_C);
+        if (opt.best_gamma) setGamma(opt.best_gamma);
+        if (opt.best_degree) setDegree(opt.best_degree);
+
+        setOptNotice(`Optimal Parameters Found: C=${opt.best_C}, CV Accuracy=${opt.best_cv_accuracy}%`);
+        setTimeout(() => setOptNotice(null), 5000);
+      }
+    } catch (e) {
+      console.warn("Auto optimize failed", e);
+    } finally {
+      setIsOptimizing(false);
     }
   };
 
@@ -120,7 +153,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen flex flex-col md:pl-64 bg-background text-on-surface">
-      {/* Top Header */}
       <Header
         selectedSymbol={symbol}
         onSelectSymbol={setSymbol}
@@ -129,10 +161,8 @@ export default function App() {
         isLiveLoading={isLoading}
       />
 
-      {/* Sidebar Drawer */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} activeKernel={kernel} />
 
-      {/* Main Desktop Container */}
       <main className="flex-1 mt-16 p-6 md:p-8 space-y-6 w-full max-w-[1920px]">
         {errorMsg && (
           <div className="bg-primary/10 border border-primary/40 text-primary px-5 py-3 rounded-lg text-sm flex justify-between items-center shadow-lg">
@@ -144,12 +174,16 @@ export default function App() {
           </div>
         )}
 
-        {/* Tab 1: Terminal / Main Dashboard */}
+        {optNotice && (
+          <div className="bg-signal-positive/10 border border-signal-positive/40 text-signal-positive px-5 py-3 rounded-lg text-sm flex items-center gap-2 shadow-lg">
+            <span className="material-symbols-outlined text-base">auto_fix_high</span>
+            {optNotice}
+          </div>
+        )}
+
         {activeTab === 'terminal' && (
           <>
-            {/* Widescreen KPI Cards Grid */}
             <section className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              {/* SVM Accuracy */}
               <div className="glass-panel p-5 rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-secondary/50">
                 <span className="font-label-caps text-label-caps text-text-muted flex items-center justify-between text-xs">
                   SVM TEST ACCURACY
@@ -164,7 +198,6 @@ export default function App() {
                 </span>
               </div>
 
-              {/* Strategy Return */}
               <div className="glass-panel p-5 rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-primary/50">
                 <div className="absolute -top-4 -right-4 w-16 h-16 bg-primary/20 blur-xl rounded-full"></div>
                 <span className="font-label-caps text-label-caps text-text-muted flex items-center justify-between text-xs">
@@ -177,7 +210,6 @@ export default function App() {
                 <span className="text-xs text-text-muted">Total Yield on Signals</span>
               </div>
 
-              {/* Benchmark Return */}
               <div className="glass-panel p-5 rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-signal-negative/50">
                 <span className="font-label-caps text-label-caps text-text-muted flex items-center justify-between text-xs">
                   STOCK BUY & HOLD BENCHMARK
@@ -189,7 +221,6 @@ export default function App() {
                 <span className="text-xs text-text-muted">Passive Stock Holding Yield</span>
               </div>
 
-              {/* Alpha */}
               <div className="glass-panel p-5 rounded-xl flex flex-col gap-2 relative overflow-hidden transition-all hover:border-signal-positive/50">
                 <div className="absolute bottom-0 right-0 w-20 h-20 bg-signal-positive/10 blur-xl rounded-full"></div>
                 <span className="font-label-caps text-label-caps text-text-muted flex items-center justify-between text-xs">
@@ -203,24 +234,25 @@ export default function App() {
               </div>
             </section>
 
-            {/* Main Widescreen Performance Chart */}
             <PerformanceChart timeseries={backtest.timeseries || []} symbol={symbol} />
 
-            {/* Desktop 2-Column Sandbox & Diagnostics */}
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
-              {/* SVM Control Sandbox (Span 7) */}
               <section className="xl:col-span-7 glass-panel rounded-xl p-6 flex flex-col gap-6">
                 <h3 className="font-headline-sm text-headline-sm text-on-surface border-b border-glow/30 pb-3 flex items-center justify-between text-lg font-bold">
                   <span className="flex items-center gap-2.5">
                     <span className="material-symbols-outlined text-secondary text-2xl">tune</span>
                     SVM Machine Learning Sandbox
                   </span>
-                  <span className="text-xs text-secondary font-label-caps uppercase px-3 py-1 rounded-full bg-secondary/10 border border-secondary/30 font-bold">
-                    {kernel} Kernel Active
-                  </span>
+                  <button
+                    onClick={handleAutoOptimize}
+                    disabled={isOptimizing}
+                    className="text-xs text-secondary font-label-caps uppercase px-3 py-1.5 rounded-lg bg-secondary/10 border border-secondary/40 font-bold flex items-center gap-1.5 hover:bg-secondary/20 transition-all cursor-pointer"
+                  >
+                    <span className={`material-symbols-outlined text-sm ${isOptimizing ? 'animate-spin' : ''}`}>auto_fix_high</span>
+                    {isOptimizing ? 'Tuning...' : 'Auto-Tune Grid'}
+                  </button>
                 </h3>
 
-                {/* Kernel Pill Selection Buttons */}
                 <div className="flex flex-col gap-2.5">
                   <span className="font-label-caps text-xs text-text-muted">SELECT KERNEL FUNCTION</span>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -240,23 +272,22 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Feature Selector Checkboxes */}
                 <div className="flex flex-col gap-2.5">
                   <span className="font-label-caps text-xs text-text-muted">PREDICTOR FEATURE VARIABLES</span>
-                  <div className="flex flex-wrap gap-3">
-                    {['Open-Close', 'High-Low', 'RSI', 'SMA_Diff', 'Volatility'].map((feat) => {
+                  <div className="flex flex-wrap gap-2.5">
+                    {['Open-Close', 'High-Low', 'RSI', 'SMA_Diff', 'MACD', 'Bollinger_Bands', 'Volatility'].map((feat) => {
                       const isSelected = selectedFeatures.includes(feat);
                       return (
                         <button
                           key={feat}
                           onClick={() => toggleFeature(feat)}
-                          className={`px-4 py-2 font-data-sm text-sm rounded-lg flex items-center gap-2 transition-all cursor-pointer ${
+                          className={`px-3.5 py-1.5 font-data-sm text-xs rounded-lg flex items-center gap-1.5 transition-all cursor-pointer ${
                             isSelected
                               ? 'bg-primary-container/20 text-primary border border-primary/60 font-semibold shadow-[0_0_10px_rgba(37,99,235,0.2)]'
                               : 'bg-surface-container-high text-text-muted hover:text-on-surface border border-transparent'
                           }`}
                         >
-                          <span className="material-symbols-outlined text-base">
+                          <span className="material-symbols-outlined text-sm">
                             {isSelected ? 'check_box' : 'checkbox_outline_blank'}
                           </span>
                           {feat}
@@ -266,7 +297,6 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Hyperparameter Controls */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-2">
                   <div className="flex flex-col gap-2">
                     <div className="flex justify-between">
@@ -311,7 +341,6 @@ export default function App() {
                 </button>
               </section>
 
-              {/* Diagnostics Matrix (Span 5) */}
               <div className="xl:col-span-5">
                 <ConfusionMatrix
                   matrix={modelPerf.confusion_matrix}
@@ -324,7 +353,6 @@ export default function App() {
           </>
         )}
 
-        {/* Tab 2: Specialized Kernel Matrix Lab */}
         {activeTab === 'lab' && (
           <KernelLab
             symbol={symbol}
@@ -334,7 +362,6 @@ export default function App() {
           />
         )}
 
-        {/* Tab 3: Signals Log */}
         {(activeTab === 'signals' || activeTab === 'backtest') && (
           <SignalsLog timeseries={backtest.timeseries || []} symbol={symbol} />
         )}
