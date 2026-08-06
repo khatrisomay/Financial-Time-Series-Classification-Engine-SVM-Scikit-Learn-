@@ -10,8 +10,9 @@ from app.data_loader import get_stock_data
 from app.feature_engineering import prepare_features_and_target
 from app.model_engine import train_and_evaluate_svm, compare_kernels
 from app.backtester import run_backtest
+from app.grid_search import optimize_svm_hyperparameters
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="2.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="2.5")
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,9 +31,14 @@ class PredictRequest(BaseModel):
     gamma: str = "scale"
     degree: int = 3
 
+class OptimizeRequest(BaseModel):
+    symbol: str = "RELIANCE"
+    selected_features: List[str] = ["Open-Close", "High-Low", "RSI"]
+    kernel: str = "rbf"
+
 @app.get("/api/health")
 def health_check():
-    return {"status": "online", "model_engine": "Support Vector Machine (SVC)"}
+    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "2.5"}
 
 @app.get("/api/stocks")
 def list_stocks():
@@ -55,7 +61,6 @@ def predict_and_backtest(req: PredictRequest):
             
         df_clean, X, y, used_features = prepare_features_and_target(df, req.selected_features)
         
-        # Train & Evaluate Model
         svm_res = train_and_evaluate_svm(
             X, y,
             split_percentage=req.split_percentage,
@@ -65,10 +70,8 @@ def predict_and_backtest(req: PredictRequest):
             degree=req.degree
         )
         
-        # Run Backtest Simulator
         backtest_res = run_backtest(df_clean, svm_res['predictions'])
         
-        # Current Stock Summary info
         latest_price = float(df_clean['Close'].iloc[-1])
         prev_price = float(df_clean['Close'].iloc[-2]) if len(df_clean) > 1 else latest_price
         pct_change = round(((latest_price - prev_price) / prev_price) * 100, 2)
@@ -92,14 +95,22 @@ def predict_and_backtest(req: PredictRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.post("/api/optimize")
+def optimize_hyperparams(req: OptimizeRequest):
+    try:
+        df = get_stock_data(req.symbol)
+        df_clean, X, y, _ = prepare_features_and_target(df, req.selected_features)
+        opt_res = optimize_svm_hyperparameters(X, y, kernel=req.kernel)
+        return {"symbol": req.symbol, "optimization": opt_res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 @app.get("/api/kernels")
 def kernel_comparison(symbol: str = "RELIANCE"):
     try:
         df = get_stock_data(symbol)
         df_clean, X, y, _ = prepare_features_and_target(df, ["Open-Close", "High-Low", "RSI"])
-        comparison = compare_kernels(X, y)
         
-        # Also run backtest for each kernel to get strategy returns
         detailed_matrix = []
         for k_name in ['linear', 'poly', 'rbf', 'sigmoid']:
             eval_res = train_and_evaluate_svm(X, y, kernel=k_name)
@@ -120,7 +131,6 @@ def kernel_comparison(symbol: str = "RELIANCE"):
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-# Mount static frontend build if present
 static_dir = os.path.join(os.path.dirname(__file__), "..", "..", "frontend", "dist")
 if os.path.exists(static_dir):
     app.mount("/assets", StaticFiles(directory=os.path.join(static_dir, "assets")), name="assets")
