@@ -12,6 +12,7 @@ from app.model_engine import train_and_evaluate_svm, compare_kernels
 from app.backtester import run_backtest
 from app.grid_search import optimize_svm_hyperparameters
 from app.report_generator import generate_backtest_csv
+from app.monte_carlo import run_monte_carlo_simulation
 
 app = FastAPI(title="Quantum SVM Stock Predictor API", version="3.0")
 
@@ -103,6 +104,20 @@ def optimize_hyperparams(req: OptimizeRequest):
         df_clean, X, y, _ = prepare_features_and_target(df, req.selected_features)
         opt_res = optimize_svm_hyperparameters(X, y, kernel=req.kernel)
         return {"symbol": req.symbol, "optimization": opt_res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/monte-carlo")
+def monte_carlo_forecast(req: PredictRequest):
+    try:
+        df = get_stock_data(req.symbol)
+        df_clean, X, y, _ = prepare_features_and_target(df, req.selected_features)
+        svm_res = train_and_evaluate_svm(X, y, kernel=req.kernel, C=req.C)
+        df_clean['Predicted_Signal'] = svm_res['predictions']
+        df_clean['Return'] = df_clean['Close'].pct_change().fillna(0)
+        strat_returns = df_clean['Return'] * df_clean['Predicted_Signal'].shift(1).fillna(0)
+        mc_res = run_monte_carlo_simulation(strat_returns)
+        return {"symbol": req.symbol, "monte_carlo": mc_res}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
