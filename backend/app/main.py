@@ -2,7 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, Response
 from pydantic import BaseModel
 from typing import List, Optional
 
@@ -11,8 +11,9 @@ from app.feature_engineering import prepare_features_and_target
 from app.model_engine import train_and_evaluate_svm, compare_kernels
 from app.backtester import run_backtest
 from app.grid_search import optimize_svm_hyperparameters
+from app.report_generator import generate_backtest_csv
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="2.5")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="3.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -38,7 +39,7 @@ class OptimizeRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "2.5"}
+    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "3.0"}
 
 @app.get("/api/stocks")
 def list_stocks():
@@ -102,6 +103,20 @@ def optimize_hyperparams(req: OptimizeRequest):
         df_clean, X, y, _ = prepare_features_and_target(df, req.selected_features)
         opt_res = optimize_svm_hyperparameters(X, y, kernel=req.kernel)
         return {"symbol": req.symbol, "optimization": opt_res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.post("/api/export")
+def export_backtest_report(req: PredictRequest):
+    try:
+        df = get_stock_data(req.symbol)
+        df_clean, X, y, _ = prepare_features_and_target(df, req.selected_features)
+        svm_res = train_and_evaluate_svm(X, y, kernel=req.kernel, C=req.C)
+        backtest_res = run_backtest(df_clean, svm_res['predictions'])
+        csv_data = generate_backtest_csv(backtest_res['timeseries'])
+        
+        filename = f"SVM_Backtest_{req.symbol}_{req.kernel}.csv"
+        return Response(content=csv_data, media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={filename}"})
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
