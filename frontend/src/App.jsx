@@ -5,6 +5,7 @@ import PerformanceChart from './components/PerformanceChart';
 import ConfusionMatrix from './components/ConfusionMatrix';
 import KernelLab from './components/KernelLab';
 import SignalsLog from './components/SignalsLog';
+import MonteCarloCard from './components/MonteCarloCard';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('terminal');
@@ -56,6 +57,34 @@ export default function App() {
       generateFallbackData();
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleExportCSV = async () => {
+    try {
+      const res = await fetch('http://localhost:8000/api/export', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          symbol: symbol,
+          selected_features: selectedFeatures,
+          kernel: kernel,
+          C: parseFloat(penaltyC)
+        })
+      });
+
+      if (res.ok) {
+        const blob = await res.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `SVM_Backtest_${symbol}_${kernel}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+      }
+    } catch (e) {
+      console.warn("CSV export failed", e);
     }
   };
 
@@ -159,6 +188,7 @@ export default function App() {
         latestPrice={predictionData?.latest_price}
         pctChange={predictionData?.pct_change || 0}
         isLiveLoading={isLoading}
+        onExportCSV={handleExportCSV}
       />
 
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} activeKernel={kernel} />
@@ -350,6 +380,8 @@ export default function App() {
                 />
               </div>
             </div>
+
+            <MonteCarloCard symbol={symbol} kernel={kernel} selectedFeatures={selectedFeatures} />
           </>
         )}
 

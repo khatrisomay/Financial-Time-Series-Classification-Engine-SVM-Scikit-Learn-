@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Header({ selectedSymbol, onSelectSymbol, latestPrice, pctChange, isLiveLoading }) {
+export default function Header({ selectedSymbol, onSelectSymbol, latestPrice, pctChange, isLiveLoading, onExportCSV }) {
   const stocks = [
     { symbol: "RELIANCE", name: "Reliance Industries", exchange: "NSE" },
     { symbol: "TCS", name: "TCS Ltd", exchange: "NSE" },
@@ -15,7 +15,7 @@ export default function Header({ selectedSymbol, onSelectSymbol, latestPrice, pc
         <span className="material-symbols-outlined text-primary text-2xl animate-pulse">monitoring</span>
         <h1 className="font-headline-md text-headline-md text-primary tracking-tight hidden sm:block">QUANTUM_SVM</h1>
         <span className="text-[11px] font-label-caps px-2.5 py-0.5 rounded-full bg-primary/10 text-secondary border border-primary/30 font-semibold">
-          v2.4 REALTIME QUANT
+          v3.0 QUANT ENTERPRISE
         </span>
       </div>
 
@@ -45,6 +45,16 @@ export default function Header({ selectedSymbol, onSelectSymbol, latestPrice, pc
             </div>
           </div>
         </div>
+
+        {/* CSV Export Button */}
+        <button
+          onClick={onExportCSV}
+          title="Export CSV Report"
+          className="px-3.5 py-2 font-label-caps text-xs rounded-lg bg-primary-container text-on-primary-container font-semibold hover:shadow-[0_0_12px_rgba(37,99,235,0.4)] transition-all flex items-center gap-1.5 cursor-pointer"
+        >
+          <span className="material-symbols-outlined text-sm">download</span>
+          <span className="hidden sm:inline">Export CSV</span>
+        </button>
 
         <button 
           onClick={() => onSelectSymbol(selectedSymbol)}
