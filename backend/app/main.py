@@ -13,8 +13,10 @@ from app.backtester import run_backtest
 from app.grid_search import optimize_svm_hyperparameters
 from app.report_generator import generate_backtest_csv
 from app.monte_carlo import run_monte_carlo_simulation
+from app.portfolio_analytics import compare_portfolio_stocks
+from app.alerts import generate_signal_alert
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="3.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="3.5")
 
 app.add_middleware(
     CORSMiddleware,
@@ -40,7 +42,7 @@ class OptimizeRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "3.0"}
+    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "3.5"}
 
 @app.get("/api/stocks")
 def list_stocks():
@@ -78,11 +80,15 @@ def predict_and_backtest(req: PredictRequest):
         prev_price = float(df_clean['Close'].iloc[-2]) if len(df_clean) > 1 else latest_price
         pct_change = round(((latest_price - prev_price) / prev_price) * 100, 2)
         
+        latest_signal = int(svm_res['predictions'][-1])
+        alert = generate_signal_alert(req.symbol, latest_signal, latest_price, svm_res['test_accuracy'])
+        
         return {
             "symbol": req.symbol,
             "latest_price": latest_price,
             "pct_change": pct_change,
             "used_features": used_features,
+            "signal_alert": alert,
             "model_performance": {
                 "kernel": req.kernel,
                 "train_accuracy": svm_res['train_accuracy'],
@@ -94,6 +100,14 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/portfolio-comparison")
+def portfolio_comparison(kernel: str = "rbf", C: float = 1.0):
+    try:
+        results = compare_portfolio_stocks(kernel=kernel, C=C)
+        return {"kernel": kernel, "portfolio": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
