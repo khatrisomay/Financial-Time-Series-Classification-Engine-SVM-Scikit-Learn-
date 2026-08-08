@@ -6,7 +6,7 @@
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
 
-An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, multi-kernel benchmarking, hyperparameter grid search optimization, Monte Carlo return forecasting, and financial strategy backtesting.
+An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, multi-kernel benchmarking, hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
@@ -17,12 +17,14 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Feature Engineering**: Calculates core variables (`Open-Close`, `High-Low`) alongside extended technical indicators (`RSI`, `SMA_Diff`, `MACD`, `Bollinger_Bands`, `Volatility`) and binary target signals ($+1$ Buy, $0$ Hold).
    - **Hyperparameter Grid Search**: Time-Series Cross Validation (`TimeSeriesSplit`) grid search optimizer to dynamically find optimal penalty $C$, $\gamma$, and degree parameters without data leakage.
    - **SVM Classifier Suite**: Sequential 80/20 train/test split, feature standard scaling, multi-kernel support (`linear`, `rbf`, `poly`, `sigmoid`), and test confusion matrix metrics (`TN`, `FP`, `FN`, `TP`, Precision, Recall, F1-Score).
+   - **Cross-Asset Portfolio Analytics**: Multi-stock performance evaluator ranking assets by risk-adjusted Sharpe Ratio and Alpha outperformance.
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
-   - **FastAPI REST Server**: Serves live predictions, kernel comparisons, hyperparameter optimization, CSV report exports, and Monte Carlo forecasts.
+   - **FastAPI REST Server**: Serves live predictions, kernel comparisons, hyperparameter optimization, portfolio rankings, CSV report exports, and Monte Carlo forecasts.
 
 2. **Widescreen Glassmorphic Web Dashboard (`frontend/`)**:
    - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster, and 2x2 diagnostic confusion matrix.
+   - **Portfolio Analytics View**: Cross-asset efficiency table ranking multi-stock SVM strategy performance by Sharpe Ratio and Win Rate.
    - **Kernel Matrix Lab**: Comparative benchmark matrix across Linear, Polynomial, RBF, and Sigmoid kernels with accuracy sparklines and risk gauges.
    - **Signals Log & CSV Export**: Tabular record of recent daily signal classifications with one-click CSV export button.
 
@@ -83,6 +85,7 @@ Access the application in your browser:
 - `GET /api/health` - API Health check.
 - `GET /api/stocks` - List available preset stocks.
 - `POST /api/predict` - Train SVM model with selected parameters and return predictions & backtest stats.
+- `GET /api/portfolio-comparison` - Compare and rank cross-asset portfolio efficiency.
 - `POST /api/optimize` - Run Time-Series Grid Search to optimize $C$ and $\gamma$ parameters.
 - `POST /api/monte-carlo` - Run 500-path Monte Carlo risk & return forecast simulation.
 - `POST /api/export` - Export backtesting performance report as downloadable CSV.
