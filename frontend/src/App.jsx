@@ -6,6 +6,7 @@ import ConfusionMatrix from './components/ConfusionMatrix';
 import KernelLab from './components/KernelLab';
 import SignalsLog from './components/SignalsLog';
 import MonteCarloCard from './components/MonteCarloCard';
+import PortfolioAnalytics from './components/PortfolioAnalytics';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('terminal');
@@ -179,6 +180,7 @@ export default function App() {
 
   const backtest = predictionData?.backtest || {};
   const modelPerf = predictionData?.model_performance || {};
+  const signalAlert = predictionData?.signal_alert || {};
 
   return (
     <div className="min-h-screen flex flex-col md:pl-64 bg-background text-on-surface">
@@ -201,6 +203,19 @@ export default function App() {
               {errorMsg}
             </span>
             <button onClick={runPrediction} className="underline hover:text-white font-semibold">Retry Connection</button>
+          </div>
+        )}
+
+        {/* Live Signal Alert Pill */}
+        {signalAlert.message && (
+          <div className="glass-panel px-5 py-3 rounded-lg border border-secondary/40 flex items-center justify-between text-sm shadow-xl">
+            <div className="flex items-center gap-3">
+              <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
+              <span className="font-semibold text-on-surface">{signalAlert.message}</span>
+            </div>
+            <span className="font-label-caps text-xs text-secondary font-bold px-2 py-0.5 rounded bg-secondary/10">
+              CONVICTION: {signalAlert.conviction}
+            </span>
           </div>
         )}
 
@@ -392,6 +407,10 @@ export default function App() {
             onSelectKernel={(k) => { setKernel(k); setActiveTab('terminal'); }}
             backtestMetrics={backtest}
           />
+        )}
+
+        {activeTab === 'portfolio' && (
+          <PortfolioAnalytics onSelectStock={(s) => { setSymbol(s); setActiveTab('terminal'); }} />
         )}
 
         {(activeTab === 'signals' || activeTab === 'backtest') && (
