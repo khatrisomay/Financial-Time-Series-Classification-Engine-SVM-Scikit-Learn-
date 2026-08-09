@@ -1,4 +1,6 @@
 import os
+import time
+import psutil
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -16,7 +18,9 @@ from app.monte_carlo import run_monte_carlo_simulation
 from app.portfolio_analytics import compare_portfolio_stocks
 from app.alerts import generate_signal_alert
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="3.5")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="4.0")
+
+START_TIME = time.time()
 
 app.add_middleware(
     CORSMiddleware,
@@ -42,7 +46,19 @@ class OptimizeRequest(BaseModel):
 
 @app.get("/api/health")
 def health_check():
-    return {"status": "online", "model_engine": "Support Vector Machine (SVC)", "version": "3.5"}
+    uptime_seconds = round(time.time() - START_TIME, 2)
+    process = psutil.Process(os.getpid())
+    memory_mb = round(process.memory_info().rss / (1024 * 1024), 2)
+    
+    return {
+        "status": "healthy",
+        "container": "docker-alpine-python3.12",
+        "model_engine": "Support Vector Machine (SVC)",
+        "version": "4.0.0",
+        "uptime_seconds": uptime_seconds,
+        "memory_usage_mb": memory_mb,
+        "cpu_threads": os.cpu_count() or 4
+    }
 
 @app.get("/api/stocks")
 def list_stocks():
