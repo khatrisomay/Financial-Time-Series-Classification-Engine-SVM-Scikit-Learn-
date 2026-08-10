@@ -7,6 +7,7 @@ import KernelLab from './components/KernelLab';
 import SignalsLog from './components/SignalsLog';
 import MonteCarloCard from './components/MonteCarloCard';
 import PortfolioAnalytics from './components/PortfolioAnalytics';
+import SentimentCard from './components/SentimentCard';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('terminal');
@@ -280,6 +281,8 @@ export default function App() {
             </section>
 
             <PerformanceChart timeseries={backtest.timeseries || []} symbol={symbol} />
+
+            <SentimentCard symbol={symbol} />
 
             <div className="grid grid-cols-1 xl:grid-cols-12 gap-6">
               <section className="xl:col-span-7 glass-panel rounded-xl p-6 flex flex-col gap-6">
