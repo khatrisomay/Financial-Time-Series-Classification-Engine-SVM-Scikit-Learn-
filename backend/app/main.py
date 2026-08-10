@@ -17,8 +17,10 @@ from app.report_generator import generate_backtest_csv
 from app.monte_carlo import run_monte_carlo_simulation
 from app.portfolio_analytics import compare_portfolio_stocks
 from app.alerts import generate_signal_alert
+from app.nlp_sentiment import analyze_stock_news_sentiment
+from app.drift_monitor import check_feature_drift
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="4.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="5.0")
 
 START_TIME = time.time()
 
@@ -54,7 +56,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "4.0.0",
+        "version": "5.0.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -98,6 +100,7 @@ def predict_and_backtest(req: PredictRequest):
         
         latest_signal = int(svm_res['predictions'][-1])
         alert = generate_signal_alert(req.symbol, latest_signal, latest_price, svm_res['test_accuracy'])
+        sentiment = analyze_stock_news_sentiment(req.symbol)
         
         return {
             "symbol": req.symbol,
@@ -105,6 +108,7 @@ def predict_and_backtest(req: PredictRequest):
             "pct_change": pct_change,
             "used_features": used_features,
             "signal_alert": alert,
+            "sentiment_analysis": sentiment,
             "model_performance": {
                 "kernel": req.kernel,
                 "train_accuracy": svm_res['train_accuracy'],
@@ -116,6 +120,25 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/sentiment")
+def get_sentiment(symbol: str = "RELIANCE"):
+    try:
+        return analyze_stock_news_sentiment(symbol)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/drift-status")
+def get_drift_status(symbol: str = "RELIANCE"):
+    try:
+        df = get_stock_data(symbol)
+        df_clean, X, _, _ = prepare_features_and_target(df, ["Open-Close", "High-Low", "RSI"])
+        split = int(0.8 * len(X))
+        X_train, X_recent = X.iloc[:split], X.iloc[split:]
+        drift_res = check_feature_drift(X_train, X_recent)
+        return {"symbol": symbol, "drift_analysis": drift_res}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
