@@ -1,17 +1,18 @@
 # Financial Time-Series Classification Engine (SVM & Scikit-Learn)
 
-![Python](https://img.shields.io/badge/Python-3.12-blue.svg)
+![Python](https://img.shields.io/badge/Python-3.10%20%7C%203.11%20%7C%203.12-blue.svg)
 ![Scikit-Learn](https://img.shields.io/badge/scikit--learn-1.6.1-orange.svg)
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-green.svg)
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
-![CI/CD](https://img.shields.io/badge/CI%2FCD-GitHub_Actions-2088FF.svg)
+![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v6.0-2088FF.svg)
+![Security Scan](https://img.shields.io/badge/Security-Bandit_%26_Trivy-brightgreen.svg)
 
 An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
-## 🌟 Key Features & Architecture (v5.0 Enterprise)
+## 🌟 Key Features & Architecture (v6.0 Enterprise CI/CD)
 
 1. **Python Machine Learning Engine (`backend/`)**:
    - **Data Ingestion**: Multi-stock historical loader supporting **RELIANCE**, **TCS**, **ICICI BANK**, **AAPL**, and **TSLA** with synthetic fallback generators and live `yfinance` integration.
@@ -24,14 +25,16 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
 
-2. **🛠️ DevOps & Infrastructure Stack**:
-   - **Docker Multi-Stage Build**: Stage 1 (`node:20-alpine`) compiles React SPA static assets; Stage 2 (`python:3.12-slim`) runs the Python ASGI backend.
-   - **Docker Compose Orchestration**: Configures single-command startup (`docker compose up --build`), port binding (`8000:8000`), and `unless-stopped` restart policies.
-   - **GitHub Actions CI/CD**: Automated `.github/workflows/ci.yml` pipeline validating Python ML test suites (`test_pipeline.py`) and building React assets on every commit.
-   - **Container Health & Telemetry Probes**: Endpoint `/api/health` exposing real-time RSS memory consumption (`psutil`), container uptime, and active worker threads.
+2. **🛠️ GitHub Actions CI/CD & DevOps Security (v6.0)**:
+   - **Python Matrix Testing (`python-matrix-ci.yml`)**: Automated matrix builds across Python 3.10, 3.11, and 3.12 on Ubuntu and Windows runners.
+   - **Frontend React Build Pipeline (`frontend-ci.yml`)**: Automated npm dependency resolution, Vite bundling, and asset size verification.
+   - **Docker Build Automation (`docker-ci.yml`)**: Automated multi-stage Docker image verification with `HEALTHCHECK` probes.
+   - **Bandit SAST Security Audit (`security-scan.yml`)**: Static code analysis checking for security vulnerabilities and unhandled exceptions.
+   - **PyTest Integration Suite (`backend/tests/`)**: Complete test coverage covering REST API endpoints, model training, feature scaling, Monte Carlo risk engine, and portfolio analytics.
+   - **OpenAPI 3.0 Documentation (`export_openapi.py`)**: Automated export of `openapi.json` API specification.
 
 3. **Widescreen Glassmorphic Web Dashboard (`frontend/`)**:
-   - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, Financial NLP News Sentiment Card, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster, DevOps Health modal, and 2x2 diagnostic confusion matrix.
+   - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, Financial NLP News Sentiment Card, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster, DevOps Health modal with GitHub Actions badge, and 2x2 diagnostic confusion matrix.
    - **Portfolio Analytics View**: Cross-asset efficiency table ranking multi-stock SVM strategy performance by Sharpe Ratio and Win Rate.
    - **Kernel Matrix Lab**: Comparative benchmark matrix across Linear, Polynomial, RBF, and Sigmoid kernels with accuracy sparklines and risk gauges.
    - **Signals Log & CSV Export**: Tabular record of recent daily signal classifications with one-click CSV export button.
@@ -46,12 +49,17 @@ Run the entire application in a single command using Docker Compose:
 docker compose up --build
 ```
 
+For production deployment:
+```bash
+docker compose -f docker-compose.prod.yml up --build -d
+```
+
 Access the application in your browser:
 👉 **[http://localhost:8000/](http://localhost:8000/)**
 
 ---
 
-## 💻 Local Setup (Without Docker)
+## 💻 Local Setup & Local CI Verification
 
 ### Prerequisites
 - Python 3.10+
@@ -78,7 +86,12 @@ Access the application in your browser:
    cd ..
    ```
 
-4. **Launch Application**:
+4. **Run Local CI Test Suite**:
+   ```bash
+   python scripts/run_local_ci.py
+   ```
+
+5. **Launch Application**:
    ```bash
    python run_app.py
    ```
