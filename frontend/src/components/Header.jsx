@@ -40,8 +40,19 @@ export default function Header({ selectedSymbol, onSelectSymbol, latestPrice, pc
           className="text-[11px] font-label-caps px-2.5 py-0.5 rounded-full bg-signal-positive/10 text-signal-positive border border-signal-positive/30 font-semibold flex items-center gap-1.5 cursor-pointer hover:bg-signal-positive/20 transition-all"
         >
           <span className="w-1.5 h-1.5 rounded-full bg-signal-positive animate-pulse"></span>
-          <span>SYSTEM: HEALTHY (v4.0)</span>
+          <span>SYSTEM: HEALTHY (v6.0)</span>
         </button>
+
+        {/* GitHub Actions CI Badge */}
+        <a
+          href="https://github.com/khatrisomay/Financial-Time-Series-Classification-Engine-SVM-Scikit-Learn-/actions"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden xl:flex items-center gap-1 text-[11px] font-label-caps px-2.5 py-0.5 rounded-full bg-primary/10 text-primary border border-primary/30 font-semibold hover:bg-primary/20 transition-all"
+        >
+          <span className="material-symbols-outlined text-xs">verified</span>
+          <span>CI/CD: PASSING</span>
+        </a>
 
         {/* Health Popover Modal */}
         {showHealthModal && (
