@@ -19,8 +19,9 @@ from app.portfolio_analytics import compare_portfolio_stocks
 from app.alerts import generate_signal_alert
 from app.nlp_sentiment import analyze_stock_news_sentiment
 from app.drift_monitor import check_feature_drift
+from app.signal_comparison import compare_feature_strategies
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="5.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="7.0")
 
 START_TIME = time.time()
 
@@ -56,7 +57,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "5.0.0",
+        "version": "7.0.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -120,6 +121,14 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/feature-comparison")
+def feature_comparison(symbol: str = "RELIANCE", kernel: str = "rbf", C: float = 1.0):
+    try:
+        results = compare_feature_strategies(symbol=symbol, kernel=kernel, C=C)
+        return {"symbol": symbol, "kernel": kernel, "feature_comparison": results}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
