@@ -5,18 +5,19 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-green.svg)
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
-![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v7.0-2088FF.svg)
+![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v7.5-2088FF.svg)
 ![Security Scan](https://img.shields.io/badge/Security-Bandit_%26_Trivy-brightgreen.svg)
 
-An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, feature subset strategy comparison, hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
+An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
-## 🌟 Key Features & Architecture (v7.0 Enterprise)
+## 🌟 Key Features & Architecture (v7.5 Enterprise)
 
 1. **Python Machine Learning Engine (`backend/`)**:
    - **Data Ingestion**: Multi-stock historical loader supporting **RELIANCE**, **TCS**, **ICICI BANK**, **AAPL**, and **TSLA** with synthetic fallback generators and live `yfinance` integration.
    - **Feature Engineering**: Calculates core variables (`Open-Close`, `High-Low`) alongside extended technical indicators (`RSI`, `SMA_Diff`, `MACD`, `Bollinger_Bands`, `Volatility`) and binary target signals ($+1$ Buy, $0$ Hold).
+   - **Advanced Classification Diagnostics**: Computes Specificity, Balanced Accuracy, False Positive Rate (FPR), and **Matthews Correlation Coefficient (MCC)** for robust ML evaluation (`diagnostic_metrics.py`).
    - **Feature Subset Benchmark Matrix**: Evaluates predictive accuracy and Sharpe Ratio yields across different indicator combinations (`Price Action Only`, `Price + RSI`, `Price + MACD`, `Full Technical Suite`).
    - **Financial NLP Sentiment Engine**: Scrapes and analyzes market headlines using domain-specific financial sentiment lexicons, producing compound sentiment scores and Bullish/Bearish conviction labels.
    - **Data Drift & Health Monitoring**: Performs Kolmogorov-Smirnov distribution tests (`drift_monitor.py`) between training baseline and recent incoming data to flag feature distribution shifts.
@@ -26,7 +27,7 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
 
-2. **🛠️ GitHub Actions CI/CD & DevOps Security (v7.0)**:
+2. **🛠️ GitHub Actions CI/CD & DevOps Security (v7.5)**:
    - **Python Matrix Testing (`python-matrix-ci.yml`)**: Automated matrix builds across Python 3.10, 3.11, and 3.12 on Ubuntu and Windows runners.
    - **Frontend React Build Pipeline (`frontend-ci.yml`)**: Automated npm dependency resolution, Vite bundling, and asset size verification.
    - **Docker Build Automation (`docker-ci.yml`)**: Automated multi-stage Docker image verification with `HEALTHCHECK` probes.
@@ -104,6 +105,7 @@ Access the application in your browser:
 - `GET /api/health` - API Health check, container uptime & memory metrics.
 - `GET /api/stocks` - List available preset stocks.
 - `POST /api/predict` - Train SVM model with selected parameters and return predictions & backtest stats.
+- `GET /api/diagnostics` - Advanced classification metrics (Specificity, MCC, Balanced Accuracy).
 - `GET /api/feature-comparison` - Compare predictive performance across feature variable subsets.
 - `GET /api/sentiment` - Analyze financial news sentiment scores and headlines.
 - `GET /api/drift-status` - Kolmogorov-Smirnov feature data drift test results.
