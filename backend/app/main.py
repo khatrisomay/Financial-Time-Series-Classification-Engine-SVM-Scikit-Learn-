@@ -20,8 +20,9 @@ from app.alerts import generate_signal_alert
 from app.nlp_sentiment import analyze_stock_news_sentiment
 from app.drift_monitor import check_feature_drift
 from app.signal_comparison import compare_feature_strategies
+from app.diagnostic_metrics import calculate_advanced_diagnostics
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="7.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="7.5")
 
 START_TIME = time.time()
 
@@ -57,7 +58,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "7.0.0",
+        "version": "7.5.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -103,6 +104,9 @@ def predict_and_backtest(req: PredictRequest):
         alert = generate_signal_alert(req.symbol, latest_signal, latest_price, svm_res['test_accuracy'])
         sentiment = analyze_stock_news_sentiment(req.symbol)
         
+        cm = svm_res['confusion_matrix']
+        advanced = calculate_advanced_diagnostics(cm['tp'], cm['fp'], cm['tn'], cm['fn'])
+        
         return {
             "symbol": req.symbol,
             "latest_price": latest_price,
@@ -110,6 +114,7 @@ def predict_and_backtest(req: PredictRequest):
             "used_features": used_features,
             "signal_alert": alert,
             "sentiment_analysis": sentiment,
+            "advanced_diagnostics": advanced,
             "model_performance": {
                 "kernel": req.kernel,
                 "train_accuracy": svm_res['train_accuracy'],
@@ -121,6 +126,18 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/diagnostics")
+def get_diagnostics(symbol: str = "RELIANCE", kernel: str = "rbf"):
+    try:
+        df = get_stock_data(symbol)
+        df_clean, X, y, _ = prepare_features_and_target(df, ["Open-Close", "High-Low", "RSI"])
+        svm_res = train_and_evaluate_svm(X, y, kernel=kernel)
+        cm = svm_res['confusion_matrix']
+        advanced = calculate_advanced_diagnostics(cm['tp'], cm['fp'], cm['tn'], cm['fn'])
+        return {"symbol": symbol, "kernel": kernel, "diagnostics": advanced}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
