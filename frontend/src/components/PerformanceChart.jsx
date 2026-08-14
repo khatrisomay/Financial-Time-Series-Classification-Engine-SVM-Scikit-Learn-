@@ -1,121 +1,78 @@
-import React, { useState } from 'react';
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
+import React from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 
-export default function PerformanceChart({ timeseries = [], symbol }) {
-  const [timeRange, setTimeRange] = useState('ALL');
+export default function PerformanceChart({ timeseries, symbol }) {
+  if (!timeseries || timeseries.length === 0) {
+    return (
+      <div className="glass-panel rounded-xl p-8 flex items-center justify-center text-text-muted">
+        Loading strategy performance chart...
+      </div>
+    );
+  }
 
-  const filteredData = React.useMemo(() => {
-    if (!timeseries || timeseries.length === 0) return [];
-    if (timeRange === '1M') return timeseries.slice(-22);
-    if (timeRange === '6M') return timeseries.slice(-130);
-    if (timeRange === '1Y') return timeseries.slice(-252);
-    return timeseries;
-  }, [timeseries, timeRange]);
-
-  const CustomTooltip = ({ active, payload, label }) => {
-    if (active && payload && payload.length) {
-      const dataPoint = payload[0].payload;
-      return (
-        <div className="glass-panel p-4 rounded-xl border border-secondary text-data-sm shadow-2xl backdrop-blur-xl z-30 min-w-[200px]">
-          <div className="text-text-muted font-label-caps mb-1 border-b border-glow/30 pb-1">{label}</div>
-          <div className="font-semibold text-on-surface text-base py-1">Close: ₹{dataPoint.close}</div>
-          <div className="text-secondary font-bold flex items-center justify-between gap-4 py-0.5">
-            <span>SVM Strategy:</span>
-            <span className="text-base">{dataPoint.strategy_return >= 0 ? `+${dataPoint.strategy_return}%` : `${dataPoint.strategy_return}%`}</span>
-          </div>
-          <div className="text-signal-negative flex items-center justify-between gap-4 py-0.5">
-            <span>Benchmark:</span>
-            <span>{dataPoint.stock_return >= 0 ? `+${dataPoint.stock_return}%` : `${dataPoint.stock_return}%`}</span>
-          </div>
-          <div className="mt-2 pt-1.5 border-t border-glow/40 font-label-caps flex items-center justify-between">
-            <span className="text-xs text-text-muted">Signal:</span>
-            <span className={dataPoint.signal === 1 ? 'text-signal-positive font-bold px-2 py-0.5 rounded bg-signal-positive/20 border border-signal-positive/30' : 'text-text-muted px-2 py-0.5 rounded bg-surface-variant'}>
-              {dataPoint.signal === 1 ? '+1 BUY' : '0 HOLD'}
-            </span>
-          </div>
-        </div>
-      );
-    }
-    return null;
-  };
+  const latest = timeseries[timeseries.length - 1];
 
   return (
-    <section className="glass-panel rounded-xl p-6 flex flex-col gap-4 w-full">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-glow/30 pb-4">
+    <section className="glass-panel rounded-xl p-6 flex flex-col gap-6 w-full">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-glow/30 pb-4 gap-4">
         <div>
           <h2 className="font-headline-md text-headline-md text-on-surface flex items-center gap-2.5 text-xl font-bold">
-            <span className="material-symbols-outlined text-secondary text-2xl">show_chart</span>
-            Performance Trajectory: SVM Strategy vs Stock Benchmark ({symbol})
+            <span className="material-symbols-outlined text-primary text-2xl">ssid_chart</span>
+            SVM Strategy Trajectory vs Benchmark ({symbol})
           </h2>
           <p className="text-xs text-text-muted mt-0.5">
-            Cumulative Strategy Returns vs Buy & Hold Benchmark across historical dataset
+            250-Day Backtest Trajectory Incorporating Trade Execution Friction & Downside Risk Analytics
           </p>
         </div>
 
-        <div className="flex gap-1.5 bg-surface-container-high/80 rounded-lg p-1.5 border border-glow/20">
-          {['1M', '6M', '1Y', 'ALL'].map((range) => (
-            <button
-              key={range}
-              onClick={() => setTimeRange(range)}
-              className={`px-4 py-1.5 font-label-caps text-label-caps rounded-md transition-all text-xs font-semibold ${
-                timeRange === range
-                  ? 'bg-primary-container text-on-primary-container shadow-[0_0_12px_rgba(37,99,235,0.4)] border border-primary/50'
-                  : 'text-text-muted hover:text-on-surface hover:bg-surface-variant'
-              }`}
-            >
-              {range}
-            </button>
-          ))}
+        <div className="flex flex-wrap items-center gap-3">
+          <div className="glass-panel px-3 py-1 rounded-lg border border-glow/30 flex items-center gap-2 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-primary"></span>
+            <span className="text-text-muted">SVM Strategy:</span>
+            <span className="font-bold text-primary">+{latest.strategy_return}%</span>
+          </div>
+
+          <div className="glass-panel px-3 py-1 rounded-lg border border-glow/30 flex items-center gap-2 text-xs">
+            <span className="w-2.5 h-2.5 rounded-full bg-signal-negative"></span>
+            <span className="text-text-muted">Stock Holding:</span>
+            <span className={`font-bold ${latest.stock_return >= 0 ? 'text-signal-positive' : 'text-signal-negative'}`}>
+              {latest.stock_return >= 0 ? `+${latest.stock_return}%` : `${latest.stock_return}%`}
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* Widescreen Desktop Chart Canvas */}
-      <div className="h-[360px] md:h-[420px] w-full pt-2">
+      {/* Trajectory Recharts Chart */}
+      <div className="h-[360px] w-full">
         <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={filteredData} margin={{ top: 15, right: 25, left: -10, bottom: 0 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.06)" />
-            <XAxis dataKey="date" stroke="#64748b" tick={{ fontSize: 11 }} tickLine={false} dy={5} />
-            <YAxis stroke="#64748b" tick={{ fontSize: 11 }} tickFormatter={(v) => `${v}%`} tickLine={false} />
-            <Tooltip content={<CustomTooltip />} />
-            <Legend
-              wrapperStyle={{ fontSize: '13px', paddingTop: '15px' }}
-              formatter={(value) => <span className="text-on-surface-variant font-medium px-2">{value}</span>}
+          <AreaChart data={timeseries} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="stratColor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#2563eb" stopOpacity={0.4}/>
+                <stop offset="95%" stopColor="#2563eb" stopOpacity={0.0}/>
+              </linearGradient>
+              <linearGradient id="stockColor" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#ff5252" stopOpacity={0.2}/>
+                <stop offset="95%" stopColor="#ff5252" stopOpacity={0.0}/>
+              </linearGradient>
+            </defs>
+            <CartesianGrid strokeDasharray="3 3" stroke="rgba(37,99,235,0.15)" vertical={false} />
+            <XAxis dataKey="date" stroke="#94a3b8" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} />
+            <YAxis stroke="#94a3b8" tick={{ fontSize: 11 }} tickLine={false} axisLine={false} unit="%" />
+            <Tooltip
+              contentStyle={{
+                backgroundColor: 'rgba(15, 23, 42, 0.95)',
+                borderColor: 'rgba(37, 99, 235, 0.4)',
+                borderRadius: '0.75rem',
+                color: '#f8fafc',
+                fontSize: '12px',
+                boxShadow: '0 0 20px rgba(37,99,235,0.3)'
+              }}
             />
-            {/* Stock Benchmark Return Line (Red) */}
-            <Line
-              type="monotone"
-              dataKey="stock_return"
-              name="Stock Benchmark (Buy & Hold)"
-              stroke="#F43F5E"
-              strokeWidth={1.8}
-              strokeDasharray="3 3"
-              dot={false}
-              activeDot={{ r: 5 }}
-            />
-            {/* SVM Strategy Cumulative Return Line (Neon Blue) */}
-            <Line
-              type="monotone"
-              dataKey="strategy_return"
-              name="SVM Strategy Cumulative Yield"
-              stroke="#4cd7f6"
-              strokeWidth={3}
-              dot={false}
-              activeDot={{ r: 7, fill: '#4cd7f6', stroke: '#070A12', strokeWidth: 2 }}
-              style={{ filter: 'drop-shadow(0 0 8px rgba(76, 215, 246, 0.7))' }}
-            />
-          </LineChart>
+            <Area type="monotone" dataKey="strategy_return" name="SVM Strategy Net Yield" stroke="#2563eb" strokeWidth={2.5} fillOpacity={1} fill="url(#stratColor)" />
+            <Area type="monotone" dataKey="stock_return" name="Stock Buy & Hold Yield" stroke="#ff5252" strokeWidth={1.5} fillOpacity={1} fill="url(#stockColor)" />
+          </AreaChart>
         </ResponsiveContainer>
-      </div>
-
-      <div className="flex flex-wrap gap-8 font-data-sm text-data-sm justify-center text-text-muted pt-3 border-t border-glow/30">
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-secondary shadow-[0_0_10px_#4cd7f6]"></div>
-          <span className="text-on-surface font-semibold">SVM Cumulative Strategy Return</span>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="w-3 h-3 rounded-full bg-signal-negative opacity-80"></div>
-          <span className="text-on-surface">Buy & Hold Benchmark</span>
-        </div>
       </div>
     </section>
   );
