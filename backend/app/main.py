@@ -22,7 +22,7 @@ from app.drift_monitor import check_feature_drift
 from app.signal_comparison import compare_feature_strategies
 from app.diagnostic_metrics import calculate_advanced_diagnostics
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="7.5")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="8.0")
 
 START_TIME = time.time()
 
@@ -42,6 +42,8 @@ class PredictRequest(BaseModel):
     C: float = 1.0
     gamma: str = "scale"
     degree: int = 3
+    commission_bps: float = 10.0
+    slippage_bps: float = 5.0
 
 class OptimizeRequest(BaseModel):
     symbol: str = "RELIANCE"
@@ -58,7 +60,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "7.5.0",
+        "version": "8.0.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -94,7 +96,12 @@ def predict_and_backtest(req: PredictRequest):
             degree=req.degree
         )
         
-        backtest_res = run_backtest(df_clean, svm_res['predictions'])
+        backtest_res = run_backtest(
+            df_clean,
+            svm_res['predictions'],
+            commission_bps=req.commission_bps,
+            slippage_bps=req.slippage_bps
+        )
         
         latest_price = float(df_clean['Close'].iloc[-1])
         prev_price = float(df_clean['Close'].iloc[-2]) if len(df_clean) > 1 else latest_price
