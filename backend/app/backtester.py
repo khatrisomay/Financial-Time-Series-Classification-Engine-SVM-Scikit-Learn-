@@ -1,69 +1,80 @@
 import numpy as np
 import pandas as pd
 
-def run_backtest(df_clean, predictions):
+def run_backtest(df, predictions, commission_bps=10.0, slippage_bps=5.0):
     """
-    Computes daily returns, strategy returns, cumulative return curves,
-    and financial risk metrics (Sharpe Ratio, Max Drawdown, Alpha).
+    Executes financial strategy backtest incorporating trading friction (commission & slippage)
+    and risk-adjusted performance ratios (Sharpe, Sortino, Calmar).
     """
-    df = df_clean.copy()
-    df['Predicted_Signal'] = predictions
+    df_bt = df.copy()
+    df_bt['Signal'] = predictions
     
-    # Calculate daily returns of the stock
-    df['Return'] = df['Close'].pct_change().fillna(0)
+    # Daily returns
+    df_bt['Stock_Return'] = df_bt['Close'].pct_change().fillna(0)
     
-    # Strategy Return: Trade on signal predicted yesterday for today
-    df['Strategy_Return'] = df['Return'] * df['Predicted_Signal'].shift(1).fillna(0)
+    # Position shifts (signal applied next day)
+    df_bt['Position'] = df_bt['Signal'].shift(1).fillna(0)
     
-    # Cumulative Growth Curves
-    df['Cum_Ret'] = (1 + df['Return']).cumprod() - 1
-    df['Cum_Strategy'] = (1 + df['Strategy_Return']).cumprod() - 1
+    # Trade execution friction penalty (15 bps total when position changes)
+    trade_executed = (df_bt['Position'] != df_bt['Position'].shift(1).fillna(0)).astype(int)
+    friction_pct = (commission_bps + slippage_bps) / 10000.0
     
-    total_stock_return = float(df['Cum_Ret'].iloc[-1]) * 100
-    total_strategy_return = float(df['Cum_Strategy'].iloc[-1]) * 100
-    alpha = total_strategy_return - total_stock_return
+    # Strategy Gross & Net Returns
+    df_bt['Gross_Strategy_Return'] = df_bt['Stock_Return'] * df_bt['Position']
+    df_bt['Friction_Penalty'] = trade_executed * friction_pct
+    df_bt['Net_Strategy_Return'] = df_bt['Gross_Strategy_Return'] - df_bt['Friction_Penalty']
     
-    # Sharpe Ratio (assuming 252 trading days/year and 3% risk-free rate)
-    strat_daily_mean = df['Strategy_Return'].mean()
-    strat_daily_std = df['Strategy_Return'].std()
-    rf_daily = 0.03 / 252
+    # Cumulative Yields
+    total_stock = float((df_bt['Stock_Return'] + 1).prod() - 1) * 100
+    total_strategy = float((df_bt['Net_Strategy_Return'] + 1).prod() - 1) * 100
+    alpha = total_strategy - total_stock
     
-    if strat_daily_std > 0:
-        sharpe_ratio = float((strat_daily_mean - rf_daily) / strat_daily_std * np.sqrt(252))
-    else:
-        sharpe_ratio = 0.0
-        
-    # Maximum Drawdown
-    cum_strat_wealth = (1 + df['Strategy_Return']).cumprod()
-    peak = cum_strat_wealth.cummax()
-    drawdown = (cum_strat_wealth - peak) / peak
+    # Sharpe Ratio (annualized)
+    mean_ret = df_bt['Net_Strategy_Return'].mean()
+    std_ret = df_bt['Net_Strategy_Return'].std()
+    sharpe = float((mean_ret / max(1e-6, std_ret)) * np.sqrt(252)) if std_ret > 0 else 0.0
+    
+    # Downside Volatility & Sortino Ratio
+    downside_returns = df_bt['Net_Strategy_Return'][df_bt['Net_Strategy_Return'] < 0]
+    downside_std = downside_returns.std()
+    sortino = float((mean_ret / max(1e-6, downside_std)) * np.sqrt(252)) if downside_std > 0 else 0.0
+    
+    # Max Drawdown & Calmar Ratio
+    cum_returns = (1 + df_bt['Net_Strategy_Return']).cumprod()
+    peak = cum_returns.cummax()
+    drawdown = (cum_returns - peak) / peak
     max_drawdown = float(drawdown.min()) * 100
     
-    # Win / Loss ratio
-    active_trades = df[df['Predicted_Signal'].shift(1) == 1]
-    winning_days = len(active_trades[active_trades['Return'] > 0])
-    total_trades = len(active_trades)
-    win_rate = (winning_days / total_trades * 100) if total_trades > 0 else 50.0
+    cagr = float(((1 + total_strategy / 100) ** (252 / max(1, len(df_bt)))) - 1) * 100
+    calmar = float(cagr / max(1e-6, abs(max_drawdown))) if max_drawdown < 0 else 0.0
     
-    # Structure time-series curve data for interactive web chart
-    dates_str = [d.strftime('%Y-%m-%d') if hasattr(d, 'strftime') else str(d) for d in df.index]
+    # Win Rate
+    active_days = df_bt[df_bt['Position'] == 1]
+    wins = len(active_days[active_days['Net_Strategy_Return'] > 0])
+    win_rate = float((wins / max(1, len(active_days))) * 100) if len(active_days) > 0 else 0.0
     
-    timeseries_data = []
-    for i in range(len(df)):
-        timeseries_data.append({
-            'date': dates_str[i],
-            'close': float(df['Close'].iloc[i]),
-            'stock_return': round(float(df['Cum_Ret'].iloc[i]) * 100, 2),
-            'strategy_return': round(float(df['Cum_Strategy'].iloc[i]) * 100, 2),
-            'signal': int(df['Predicted_Signal'].iloc[i])
+    timeseries = []
+    cum_stock = 0.0
+    cum_strat = 0.0
+    for idx, row in df_bt.iterrows():
+        cum_stock += row['Stock_Return'] * 100
+        cum_strat += row['Net_Strategy_Return'] * 100
+        timeseries.append({
+            "date": str(row['Date']) if 'Date' in row else str(idx),
+            "close": round(float(row['Close']), 2),
+            "stock_return": round(cum_stock, 2),
+            "strategy_return": round(cum_strat, 2),
+            "signal": int(row['Signal'])
         })
         
     return {
-        'total_stock_return': round(total_stock_return, 2),
-        'total_strategy_return': round(total_strategy_return, 2),
-        'alpha': round(alpha, 2),
-        'sharpe_ratio': round(sharpe_ratio, 2),
-        'max_drawdown': round(max_drawdown, 2),
-        'win_rate': round(win_rate, 1),
-        'timeseries': timeseries_data
+        "total_stock_return": round(total_stock, 2),
+        "total_strategy_return": round(total_strategy, 2),
+        "alpha": round(alpha, 2),
+        "sharpe_ratio": round(sharpe, 2),
+        "sortino_ratio": round(sortino, 2),
+        "calmar_ratio": round(calmar, 2),
+        "max_drawdown": round(max_drawdown, 2),
+        "win_rate": round(win_rate, 2),
+        "timeseries": timeseries
     }
