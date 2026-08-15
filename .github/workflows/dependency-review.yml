@@ -1,0 +1,18 @@
+name: Automated Dependency Security Review
+
+on:
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+
+jobs:
+  dependency-review:
+    name: Audit Dependency Supply Chain Security
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+      - name: Dependency Review Scan
+        uses: actions/dependency-review-action@v4
