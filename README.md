@@ -5,18 +5,20 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-green.svg)
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
-![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v8.0-2088FF.svg)
+![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v9.0-2088FF.svg)
 ![Security Scan](https://img.shields.io/badge/Security-Bandit_%26_Trivy-brightgreen.svg)
 
-An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), trade execution friction simulation (commission & slippage), downside risk analytics (Sortino & Calmar Ratios), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
+An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), Expected Shortfall (CVaR) tail risk evaluation, cross-asset Pearson correlation matrices, trade execution friction simulation (commission & slippage), downside risk analytics (Sortino & Calmar Ratios), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
-## 🌟 Key Features & Architecture (v8.0 Enterprise)
+## 🌟 Key Features & Architecture (v9.0 Enterprise)
 
 1. **Python Machine Learning Engine (`backend/`)**:
    - **Data Ingestion**: Multi-stock historical loader supporting **RELIANCE**, **TCS**, **ICICI BANK**, **AAPL**, and **TSLA** with synthetic fallback generators and live `yfinance` integration.
    - **Feature Engineering**: Calculates core variables (`Open-Close`, `High-Low`) alongside extended technical indicators (`RSI`, `SMA_Diff`, `MACD`, `Bollinger_Bands`, `Volatility`) and binary target signals ($+1$ Buy, $0$ Hold).
+   - **Expected Shortfall (CVaR) & Tail Risk**: Calculates 95% & 99% Value-at-Risk (VaR) and Conditional Value-at-Risk (`cvar_calculator.py`) for tail loss risk management.
+   - **Cross-Asset Pearson Correlation Heatmap**: Computes pairwise correlation matrices (`asset_correlation.py`) across multi-stock universe.
    - **Trade Execution Friction Simulator**: Incorporates realistic broker commission (`10 bps`) and market slippage (`5 bps`) penalties into net strategy yield calculations.
    - **Risk-Adjusted Performance Ratios**: Calculates Sharpe Ratio, **Sortino Ratio** (downside volatility adjustment), and **Calmar Ratio** (CAGR to max drawdown ratio).
    - **Advanced Classification Diagnostics**: Computes Specificity, Balanced Accuracy, False Positive Rate (FPR), and **Matthews Correlation Coefficient (MCC)** for robust ML evaluation (`diagnostic_metrics.py`).
@@ -29,18 +31,19 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
 
-2. **🛠️ GitHub Actions CI/CD & DevOps Security (v8.0)**:
+2. **🛠️ GitHub Actions CI/CD & DevOps Security (v9.0)**:
    - **Python Matrix Testing (`python-matrix-ci.yml`)**: Automated matrix builds across Python 3.10, 3.11, and 3.12 on Ubuntu and Windows runners.
    - **Frontend React Build Pipeline (`frontend-ci.yml`)**: Automated npm dependency resolution, Vite bundling, and asset size verification.
    - **Docker Build Automation (`docker-ci.yml`)**: Automated multi-stage Docker image verification with `HEALTHCHECK` probes.
+   - **Dependency Supply Chain Security (`dependency-review.yml`)**: Automated vulnerability reviewer for pull requests.
    - **Bandit SAST Security Audit (`security-scan.yml`)**: Static code analysis checking for security vulnerabilities and unhandled exceptions.
-   - **PyTest Integration Suite (`backend/tests/`)**: Complete test coverage covering REST API endpoints, model training, feature scaling, Monte Carlo risk engine, friction backtesting, and portfolio analytics.
+   - **PyTest Integration Suite (`backend/tests/`)**: Complete test coverage covering REST API endpoints, model training, feature scaling, Monte Carlo risk engine, CVaR math, friction backtesting, and portfolio analytics.
    - **OpenAPI 3.0 Documentation (`export_openapi.py`)**: Automated export of `openapi.json` API specification.
 
 3. **Widescreen Glassmorphic Web Dashboard (`frontend/`)**:
-   - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, Financial NLP News Sentiment Card, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster, DevOps Health modal with GitHub Actions badge, and 2x2 diagnostic confusion matrix.
+   - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, Financial NLP News Sentiment Card, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster with 95%/99% Expected Shortfall CVaR, DevOps Health modal with GitHub Actions badge, and 2x2 diagnostic confusion matrix.
    - **Signals & Benchmarks View**: Technical Feature Combination Benchmark Matrix comparing accuracy, strategy return, Sharpe ratio, and alpha outperformance across feature subsets.
-   - **Portfolio Analytics View**: Cross-asset efficiency table ranking multi-stock SVM strategy performance by Sharpe Ratio and Win Rate.
+   - **Portfolio Analytics View**: Cross-asset efficiency table ranking multi-stock SVM strategy performance by Sharpe Ratio and Win Rate, alongside the Interactive Cross-Asset Correlation Matrix Heatmap.
    - **Kernel Matrix Lab**: Comparative benchmark matrix across Linear, Polynomial, RBF, and Sigmoid kernels with accuracy sparklines and risk gauges.
 
 ---
@@ -95,7 +98,12 @@ Access the application in your browser:
    python scripts/run_local_ci.py
    ```
 
-5. **Launch Application**:
+5. **Generate Enterprise Benchmark Report**:
+   ```bash
+   python scripts/generate_benchmark_report.py
+   ```
+
+6. **Launch Application**:
    ```bash
    python run_app.py
    ```
@@ -107,6 +115,8 @@ Access the application in your browser:
 - `GET /api/health` - API Health check, container uptime & memory metrics.
 - `GET /api/stocks` - List available preset stocks.
 - `POST /api/predict` - Train SVM model with selected parameters and return predictions & backtest stats (supports `commission_bps` & `slippage_bps`).
+- `GET /api/cvar` - Tail risk Expected Shortfall (CVaR 95% / 99%) calculations.
+- `GET /api/correlation` - Pairwise Pearson cross-asset correlation matrix.
 - `GET /api/diagnostics` - Advanced classification metrics (Specificity, MCC, Balanced Accuracy).
 - `GET /api/feature-comparison` - Compare predictive performance across feature variable subsets.
 - `GET /api/sentiment` - Analyze financial news sentiment scores and headlines.
