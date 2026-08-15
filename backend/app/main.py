@@ -21,8 +21,10 @@ from app.nlp_sentiment import analyze_stock_news_sentiment
 from app.drift_monitor import check_feature_drift
 from app.signal_comparison import compare_feature_strategies
 from app.diagnostic_metrics import calculate_advanced_diagnostics
+from app.cvar_calculator import calculate_expected_shortfall
+from app.asset_correlation import compute_asset_correlation_matrix
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="8.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="9.0")
 
 START_TIME = time.time()
 
@@ -60,7 +62,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "8.0.0",
+        "version": "9.0.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -114,6 +116,10 @@ def predict_and_backtest(req: PredictRequest):
         cm = svm_res['confusion_matrix']
         advanced = calculate_advanced_diagnostics(cm['tp'], cm['fp'], cm['tn'], cm['fn'])
         
+        df_clean['Predicted_Signal'] = svm_res['predictions']
+        returns = df_clean['Close'].pct_change().dropna()
+        cvar_res = calculate_expected_shortfall(returns)
+        
         return {
             "symbol": req.symbol,
             "latest_price": latest_price,
@@ -122,6 +128,7 @@ def predict_and_backtest(req: PredictRequest):
             "signal_alert": alert,
             "sentiment_analysis": sentiment,
             "advanced_diagnostics": advanced,
+            "tail_risk": cvar_res,
             "model_performance": {
                 "kernel": req.kernel,
                 "train_accuracy": svm_res['train_accuracy'],
@@ -133,6 +140,23 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/cvar")
+def get_cvar(symbol: str = "RELIANCE"):
+    try:
+        df = get_stock_data(symbol)
+        returns = df['Close'].pct_change().dropna()
+        cvar_res = calculate_expected_shortfall(returns)
+        return {"symbol": symbol, "tail_risk": cvar_res}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/correlation")
+def get_correlation():
+    try:
+        return compute_asset_correlation_matrix()
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
