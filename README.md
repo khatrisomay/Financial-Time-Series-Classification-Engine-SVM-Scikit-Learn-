@@ -5,18 +5,19 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-green.svg)
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
-![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v9.0-2088FF.svg)
+![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v9.5-2088FF.svg)
 ![Security Scan](https://img.shields.io/badge/Security-Bandit_%26_Trivy-brightgreen.svg)
 
-An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), Expected Shortfall (CVaR) tail risk evaluation, cross-asset Pearson correlation matrices, trade execution friction simulation (commission & slippage), downside risk analytics (Sortino & Calmar Ratios), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
+An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, probability confidence estimation, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), Expected Shortfall (CVaR) tail risk evaluation, cross-asset Pearson correlation matrices, trade execution friction simulation (commission & slippage), downside risk analytics (Sortino & Calmar Ratios), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
-## 🌟 Key Features & Architecture (v9.0 Enterprise)
+## 🌟 Key Features & Architecture (v9.5 Enterprise)
 
 1. **Python Machine Learning Engine (`backend/`)**:
    - **Data Ingestion**: Multi-stock historical loader supporting **RELIANCE**, **TCS**, **ICICI BANK**, **AAPL**, and **TSLA** with synthetic fallback generators and live `yfinance` integration.
    - **Feature Engineering**: Calculates core variables (`Open-Close`, `High-Low`) alongside extended technical indicators (`RSI`, `SMA_Diff`, `MACD`, `Bollinger_Bands`, `Volatility`) and binary target signals ($+1$ Buy, $0$ Hold).
+   - **Probability Confidence Estimator**: Calculates continuous decision probability scores (`SVC(probability=True)`) to score signal conviction percentages.
    - **Expected Shortfall (CVaR) & Tail Risk**: Calculates 95% & 99% Value-at-Risk (VaR) and Conditional Value-at-Risk (`cvar_calculator.py`) for tail loss risk management.
    - **Cross-Asset Pearson Correlation Heatmap**: Computes pairwise correlation matrices (`asset_correlation.py`) across multi-stock universe.
    - **Trade Execution Friction Simulator**: Incorporates realistic broker commission (`10 bps`) and market slippage (`5 bps`) penalties into net strategy yield calculations.
@@ -31,7 +32,7 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
 
-2. **🛠️ GitHub Actions CI/CD & DevOps Security (v9.0)**:
+2. **🛠️ GitHub Actions CI/CD & DevOps Security (v9.5)**:
    - **Python Matrix Testing (`python-matrix-ci.yml`)**: Automated matrix builds across Python 3.10, 3.11, and 3.12 on Ubuntu and Windows runners.
    - **Frontend React Build Pipeline (`frontend-ci.yml`)**: Automated npm dependency resolution, Vite bundling, and asset size verification.
    - **Docker Build Automation (`docker-ci.yml`)**: Automated multi-stage Docker image verification with `HEALTHCHECK` probes.
