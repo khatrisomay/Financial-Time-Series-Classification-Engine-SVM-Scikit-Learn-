@@ -207,16 +207,22 @@ export default function App() {
           </div>
         )}
 
-        {/* Live Signal Alert Pill */}
+        {/* Live Signal Alert Pill with Probability Confidence */}
         {signalAlert.message && (
           <div className="glass-panel px-5 py-3 rounded-lg border border-secondary/40 flex items-center justify-between text-sm shadow-xl">
             <div className="flex items-center gap-3">
               <span className="w-2.5 h-2.5 rounded-full bg-secondary animate-pulse"></span>
               <span className="font-semibold text-on-surface">{signalAlert.message}</span>
             </div>
-            <span className="font-label-caps text-xs text-secondary font-bold px-2 py-0.5 rounded bg-secondary/10">
-              CONVICTION: {signalAlert.conviction}
-            </span>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 text-xs text-text-muted">
+                <span>Confidence:</span>
+                <span className="font-bold text-secondary">{signalAlert.model_accuracy}%</span>
+              </div>
+              <span className="font-label-caps text-xs text-secondary font-bold px-2 py-0.5 rounded bg-secondary/10">
+                CONVICTION: {signalAlert.conviction}
+              </span>
+            </div>
           </div>
         )}
 
