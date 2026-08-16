@@ -1,86 +1,76 @@
 import numpy as np
 import pandas as pd
 from sklearn.svm import SVC
-from sklearn.metrics import accuracy_score, confusion_matrix, precision_score, recall_score, f1_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import confusion_matrix, precision_score, recall_score, f1_score
 
 def train_and_evaluate_svm(X, y, split_percentage=0.8, kernel='rbf', C=1.0, gamma='scale', degree=3):
     """
-    Splits time-series data sequentially (80/20 standard split), scales features, fits SVC model,
-    and returns comprehensive metrics and full dataset predictions.
+    Trains a Support Vector Machine (SVC) classifier with probability estimation,
+    feature standard scaling, 80/20 train/test split, and confusion matrix diagnostics.
     """
-    split = int(split_percentage * len(X))
-    if split <= 0 or split >= len(X):
-        split = int(0.8 * len(X))
-        
+    split = int(len(X) * split_percentage)
     X_train, X_test = X.iloc[:split], X.iloc[split:]
     y_train, y_test = y.iloc[:split], y.iloc[split:]
     
-    # Feature Scaling (Crucial for SVM performance)
     scaler = StandardScaler()
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
-    X_full_scaled = scaler.transform(X)
+    X_all_scaled = scaler.transform(X)
     
-    # Configure SVM Model
-    if kernel == 'poly':
-        cls = SVC(kernel='poly', degree=int(degree), C=float(C), gamma=gamma, random_state=42)
-    else:
-        cls = SVC(kernel=kernel, C=float(C), gamma=gamma, random_state=42)
-        
-    # Fit Model
-    cls.fit(X_train_scaled, y_train)
+    # Enable probability estimation for conviction scoring
+    model = SVC(kernel=kernel, C=C, gamma=gamma, degree=degree, probability=True, random_state=42)
+    model.fit(X_train_scaled, y_train)
     
-    # Train / Test predictions
-    y_train_pred = cls.predict(X_train_scaled)
-    y_test_pred = cls.predict(X_test_scaled)
-    y_full_pred = cls.predict(X_full_scaled)
+    y_train_pred = model.predict(X_train_scaled)
+    y_test_pred = model.predict(X_test_scaled)
+    all_preds = model.predict(X_all_scaled)
     
-    # Calculate Accuracy
-    train_acc = float(accuracy_score(y_train, y_train_pred))
-    test_acc = float(accuracy_score(y_test, y_test_pred))
+    # Calculate probability scores for all samples
+    all_probs = model.predict_proba(X_all_scaled)
+    latest_prob = float(np.max(all_probs[-1])) * 100.0
     
-    # Diagnostics Matrix (Confusion Matrix on Test set)
+    train_acc = float(np.mean(y_train_pred == y_train)) * 100.0
+    test_acc = float(np.mean(y_test_pred == y_test)) * 100.0
+    
     cm = confusion_matrix(y_test, y_test_pred)
-    tn, fp, fn, tp = int(cm[0, 0]), int(cm[0, 1]), int(cm[1, 0]), int(cm[1, 1]) if cm.shape == (2, 2) else (0, 0, 0, 0)
-    
-    precision = float(precision_score(y_test, y_test_pred, zero_division=0))
-    recall = float(recall_score(y_test, y_test_pred, zero_division=0))
-    f1 = float(f1_score(y_test, y_test_pred, zero_division=0))
+    if cm.shape == (2, 2):
+        tn, fp, fn, tp = cm.ravel()
+    else:
+        tn, fp, fn, tp = 0, 0, 0, len(y_test)
+        
+    prec = precision_score(y_test, y_test_pred, zero_division=0) * 100.0
+    rec = recall_score(y_test, y_test_pred, zero_division=0) * 100.0
+    f1 = f1_score(y_test, y_test_pred, zero_division=0)
     
     return {
-        'model': cls,
+        'model': model,
         'scaler': scaler,
-        'train_accuracy': round(train_acc * 100, 2),
-        'test_accuracy': round(test_acc * 100, 2),
-        'predictions': y_full_pred,
-        'split_index': split,
-        'confusion_matrix': {
-            'tn': tn,
-            'fp': fp,
-            'fn': fn,
-            'tp': tp
-        },
-        'precision': round(precision * 100, 2),
-        'recall': round(recall * 100, 2),
+        'train_accuracy': round(train_acc, 2),
+        'test_accuracy': round(test_acc, 2),
+        'predictions': all_preds,
+        'latest_probability': round(latest_prob, 1),
+        'confusion_matrix': {'tn': int(tn), 'fp': int(fp), 'fn': int(fn), 'tp': int(tp)},
+        'precision': round(prec, 2),
+        'recall': round(rec, 2),
         'f1_score': round(f1, 2)
     }
 
-def compare_kernels(X, y, split_percentage=0.8):
+def compare_kernels(X, y):
     """
-    Evaluates linear, poly (deg 3), rbf, and sigmoid kernels.
+    Benchmarks performance across Linear, Polynomial, RBF, and Sigmoid kernels.
     """
     kernels = ['linear', 'poly', 'rbf', 'sigmoid']
     results = {}
     
     for k in kernels:
-        res = train_and_evaluate_svm(X, y, split_percentage=split_percentage, kernel=k)
+        res = train_and_evaluate_svm(X, y, kernel=k)
         results[k] = {
-            'train_acc': res['train_accuracy'],
-            'test_acc': res['test_accuracy'],
+            'train_accuracy': res['train_accuracy'],
+            'test_accuracy': res['test_accuracy'],
+            'f1_score': res['f1_score'],
             'precision': res['precision'],
-            'recall': res['recall'],
-            'f1_score': res['f1_score']
+            'recall': res['recall']
         }
         
     return results
