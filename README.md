@@ -5,14 +5,15 @@
 ![FastAPI](https://img.shields.io/badge/FastAPI-0.141.1-green.svg)
 ![React](https://img.shields.io/badge/React-18-cyan.svg)
 ![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
-![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v9.5-2088FF.svg)
-![Security Scan](https://img.shields.io/badge/Security-Bandit_%26_Trivy-brightgreen.svg)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-K8s_Ready-326CE5.svg)
+![Helm](https://img.shields.io/badge/Helm-v3_Chart-0F1689.svg)
+![GitHub Actions CI](https://img.shields.io/badge/CI%2FCD-GitHub_Actions_v10.0-2088FF.svg)
 
 An end-to-end Machine Learning platform and interactive quantitative trading dashboard for **Predicting Stock Price Direction using Support Vector Machines (SVM)** based on historical market data, technical indicator feature engineering, financial NLP sentiment scoring, data drift monitoring, multi-kernel benchmarking, probability confidence estimation, feature subset strategy comparison, advanced classification metrics (MCC & Specificity), Expected Shortfall (CVaR) tail risk evaluation, cross-asset Pearson correlation matrices, trade execution friction simulation (commission & slippage), downside risk analytics (Sortino & Calmar Ratios), hyperparameter grid search optimization, Monte Carlo return forecasting, cross-asset portfolio ranking, and financial strategy backtesting.
 
 ---
 
-## 🌟 Key Features & Architecture (v9.5 Enterprise)
+## 🌟 Key Features & Architecture (v10.0 Cloud-Native Kubernetes)
 
 1. **Python Machine Learning Engine (`backend/`)**:
    - **Data Ingestion**: Multi-stock historical loader supporting **RELIANCE**, **TCS**, **ICICI BANK**, **AAPL**, and **TSLA** with synthetic fallback generators and live `yfinance` integration.
@@ -32,7 +33,14 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **Monte Carlo Risk Engine**: 500-path stochastic return simulation calculating 95% Value at Risk (VaR), 5th percentile Bear case, 50th percentile Expected case, and 95th percentile Bull case.
    - **Quantitative Backtesting Simulator**: Signal generation, cumulative strategy returns calculation, CAGR %, Sharpe Ratio, Maximum Drawdown %, Win/Loss %, and Alpha (% Outperformance over stock Buy & Hold).
 
-2. **🛠️ GitHub Actions CI/CD & DevOps Security (v9.5)**:
+2. **☸️ Kubernetes (K8s) & Cloud-Native Infrastructure (v10.0)**:
+   - **Kubernetes Deployments (`k8s/deployment.yaml`)**: Rolling updates with 2 replica pods, readiness & liveness probes (`/api/health`), and CPU/Memory resource constraints (`512Mi`).
+   - **ClusterIP & Ingress (`k8s/service.yaml`, `k8s/ingress.yaml`)**: Internal service load balancing and NGINX Ingress controller for SSL/TLS domain termination.
+   - **Horizontal Pod Autoscaler (`k8s/hpa.yaml`)**: Dynamic auto-scaling from 2 to 10 pod replicas based on 70% CPU / 80% Memory thresholds.
+   - **ConfigMaps & Secrets (`k8s/configmap.yaml`, `k8s/secret.yaml`)**: Decoupled environment variables and secure credentials.
+   - **Helm v3 Chart (`helm/`)**: Standardized Helm chart packaging (`Chart.yaml`, `values.yaml`) for one-command enterprise cluster deployment.
+
+3. **🛠️ GitHub Actions CI/CD & DevOps Security**:
    - **Python Matrix Testing (`python-matrix-ci.yml`)**: Automated matrix builds across Python 3.10, 3.11, and 3.12 on Ubuntu and Windows runners.
    - **Frontend React Build Pipeline (`frontend-ci.yml`)**: Automated npm dependency resolution, Vite bundling, and asset size verification.
    - **Docker Build Automation (`docker-ci.yml`)**: Automated multi-stage Docker image verification with `HEALTHCHECK` probes.
@@ -41,11 +49,30 @@ An end-to-end Machine Learning platform and interactive quantitative trading das
    - **PyTest Integration Suite (`backend/tests/`)**: Complete test coverage covering REST API endpoints, model training, feature scaling, Monte Carlo risk engine, CVaR math, friction backtesting, and portfolio analytics.
    - **OpenAPI 3.0 Documentation (`export_openapi.py`)**: Automated export of `openapi.json` API specification.
 
-3. **Widescreen Glassmorphic Web Dashboard (`frontend/`)**:
+4. **Widescreen Glassmorphic Web Dashboard (`frontend/`)**:
    - **Terminal View**: Live KPI metric cards, widescreen interactive Recharts trajectory chart, Financial NLP News Sentiment Card, real-time SVM Sandbox (kernel toggles, hyperparameter sliders $C$ & $\gamma$, Auto-Tune Grid Search button, feature selection), Monte Carlo risk forecaster with 95%/99% Expected Shortfall CVaR, DevOps Health modal with GitHub Actions badge, and 2x2 diagnostic confusion matrix.
    - **Signals & Benchmarks View**: Technical Feature Combination Benchmark Matrix comparing accuracy, strategy return, Sharpe ratio, and alpha outperformance across feature subsets.
    - **Portfolio Analytics View**: Cross-asset efficiency table ranking multi-stock SVM strategy performance by Sharpe Ratio and Win Rate, alongside the Interactive Cross-Asset Correlation Matrix Heatmap.
    - **Kernel Matrix Lab**: Comparative benchmark matrix across Linear, Polynomial, RBF, and Sigmoid kernels with accuracy sparklines and risk gauges.
+
+---
+
+## ☸️ Kubernetes (K8s) & Helm Deployment
+
+### 1. Apply Kubernetes Manifests
+```bash
+kubectl apply -f k8s/configmap.yaml
+kubectl apply -f k8s/secret.yaml
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+kubectl apply -f k8s/ingress.yaml
+kubectl apply -f k8s/hpa.yaml
+```
+
+### 2. Deploy via Helm v3
+```bash
+helm install quantum-svm ./helm
+```
 
 ---
 
