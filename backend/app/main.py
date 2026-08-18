@@ -23,8 +23,9 @@ from app.signal_comparison import compare_feature_strategies
 from app.diagnostic_metrics import calculate_advanced_diagnostics
 from app.cvar_calculator import calculate_expected_shortfall
 from app.asset_correlation import compute_asset_correlation_matrix
+from app.feature_importance import calculate_feature_importance
 
-app = FastAPI(title="Quantum SVM Stock Predictor API", version="9.0")
+app = FastAPI(title="Quantum SVM Stock Predictor API", version="10.5")
 
 START_TIME = time.time()
 
@@ -62,7 +63,7 @@ def health_check():
         "status": "healthy",
         "container": "docker-alpine-python3.12",
         "model_engine": "Support Vector Machine (SVC)",
-        "version": "9.0.0",
+        "version": "10.5.0",
         "uptime_seconds": uptime_seconds,
         "memory_usage_mb": memory_mb,
         "cpu_threads": os.cpu_count() or 4
@@ -140,6 +141,13 @@ def predict_and_backtest(req: PredictRequest):
             },
             "backtest": backtest_res
         }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+@app.get("/api/feature-importance")
+def get_feature_importance(symbol: str = "RELIANCE"):
+    try:
+        return calculate_feature_importance(symbol)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
